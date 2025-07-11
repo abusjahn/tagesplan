@@ -89,39 +89,58 @@ server <- function(input, output, session) {
   })
 
   # Lädt die Mitarbeiterdaten aus der Excel-Datei
+  # mitarbeiter_data <- reactive({
+  #   file_path <- "mitarbeiter.xlsx" # Definiert den Dateipfad
+  #
+  #   # Stellt sicher, dass die Datei existiert und gibt eine Meldung aus, falls nicht
+  #   validate(
+  #     need(file.exists(file_path), "Fehler: Die Datei 'mitarbeiter.xlsx' wurde nicht gefunden. Bitte stellen Sie sicher, dass sie im selben Ordner wie die App ist.")
+  #   )
+  #
+  #   df <- tryCatch(
+  #     {
+  #       read_excel(file_path)
+  #     },
+  #     error = function(e) {
+  #       # Gibt eine Fehlermeldung aus, wenn die Excel-Datei nicht gelesen werden kann
+  #       stop(paste0("Fehler beim Lesen von 'mitarbeiter.xlsx': ", e$message))
+  #     }
+  #   )
+  #
+  #   # Überprüft, ob die Spalte 'Name' vorhanden ist
+  #   validate(
+  #     need("Name" %in% names(df), "Fehler: Die 'mitarbeiter.xlsx'-Datei muss eine Spalte namens 'Name' enthalten.")
+  #   )
+  #
+  #   # Überprüft, ob die Tabelle Daten enthält
+  #   validate(
+  #     need(nrow(df) > 0, "Die 'mitarbeiter.xlsx'-Datei enthält keine Daten. Bitte überprüfen Sie den Inhalt der Excel-Datei.")
+  #   )
+  #
+  #   # Stellt sicher, dass die 'Name'-Spalte als Zeichenkette behandelt wird
+  #   df$Name <- as.character(df$Name)
+  #   df
+  # })
+  # Erstellen der statischen Daten für die Tabelle
   mitarbeiter_data <- reactive({
-    file_path <- "mitarbeiter.xlsx" # Definiert den Dateipfad
-
-    # Stellt sicher, dass die Datei existiert und gibt eine Meldung aus, falls nicht
-    validate(
-      need(file.exists(file_path), "Fehler: Die Datei 'mitarbeiter.xlsx' wurde nicht gefunden. Bitte stellen Sie sicher, dass sie im selben Ordner wie die App ist.")
+    data.frame(
+      Name = c(c("Müller", "Meier", "Schulze", "Schmitt", "Mustermann", "Young", "Frazey", "Eberhart", "Brauchler", "Farrar", "Korchuk", "Pippin", "Hahs", "Welsh", "Masar", "Alarcon", "Potter", "Mckim", "Hutchens", "Pokrant", "Hounshell", "Mckenney", "Rickman", "Knapp", "Cieloha")),
+      Vorname = c(c("Paul", "Martha", "Manuela", "Emanuella", "Heinz", "Riley", "Elizabeth", "Kimber", "Jacob", "Nicholas", "Beau", "Rachel", "Brian", "Brian", "Krystal", "Aria", "Brandon", "Jonathan", "Rebecca", "Ethan", "Cortnee", "Ann", "Mary", "Tyler", "Kara")),
+      Status = c(c("MA", "Praktikant", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA")),
+      stringsAsFactors = FALSE # Wichtig, um Strings als Strings zu behalten
     )
-
-    df <- tryCatch(
-      {
-        read_excel(file_path)
-      },
-      error = function(e) {
-        # Gibt eine Fehlermeldung aus, wenn die Excel-Datei nicht gelesen werden kann
-        stop(paste0("Fehler beim Lesen von 'mitarbeiter.xlsx': ", e$message))
-      }
-    )
-
-    # Überprüft, ob die Spalte 'Name' vorhanden ist
-    validate(
-      need("Name" %in% names(df), "Fehler: Die 'mitarbeiter.xlsx'-Datei muss eine Spalte namens 'Name' enthalten.")
-    )
-
-    # Überprüft, ob die Tabelle Daten enthält
-    validate(
-      need(nrow(df) > 0, "Die 'mitarbeiter.xlsx'-Datei enthält keine Daten. Bitte überprüfen Sie den Inhalt der Excel-Datei.")
-    )
-
-    # Stellt sicher, dass die 'Name'-Spalte als Zeichenkette behandelt wird
-    df$Name <- as.character(df$Name)
-    df
   })
 
+  # Rendern der Tabelle mit DT
+  output$mitarbeiter_table <- renderDT({
+    datatable(mitarbeiter_data(), options = list(
+      pageLength = 5, # Zeigt standardmäßig 5 Zeilen an
+      lengthMenu = c(5, 10, 15, 20), # Optionen für die Anzahl der angezeigten Zeilen
+      searching = FALSE, # Deaktiviert die Suchfunktion
+      paging = TRUE, # Aktiviert die Paginierung
+      info = FALSE # Deaktiviert die Anzeige von Informationen zur Tabelle (z.B. "Showing 1 to X of Y entries")
+    ))
+  })
   # Initialisiert den Dienstplan basierend auf dem ausgewählten Datum
   observeEvent(input$selected_date,
     {
