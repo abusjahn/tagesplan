@@ -5,7 +5,8 @@ library(readxl)
 library(writexl)
 library(lubridate) # Für die wochentag() Funktion
 library(dplyr) # Für die Datenmanipulation
-
+library(tibble) # Für MAtabelle
+library(lubridate) # Für Abwesenheits-check)
 
 ui <- fluidPage(
   # Titel der Anwendung
@@ -27,9 +28,9 @@ ui <- fluidPage(
       ), # Woche startet am Montag
 
       br(), # Kleiner Abstand
-      h4("Dienstplan exportieren"),
+      h4(HTML("Dienstplan<br>exportieren")),
       # Button zum Exportieren des Dienstplans als Excel-Datei
-      downloadButton("download_plan", "Dienstplan exportieren")
+      downloadButton("download_plan", "Download")
     ),
 
     # Hauptbereich für die Dienstplan-Tabelle und Mitarbeiter-Tabelle
@@ -38,7 +39,7 @@ ui <- fluidPage(
         column(
           width = 8, # ca. 70%      # Dynamischer Titel für den Dienstplan
           h4(textOutput("dienstplan_title")),
-          helpText("Klicken Sie in einFeld der Spalte 'Name', um den ausgewählten Mitarbeiter einzufügen. Sie können mehrere Namen in ein Feld einfügen."),
+          helpText("Klicken Sie in ein Feld der Spalte 'Name', um den ausgewählten Mitarbeiter einzufügen. Sie können mehrere Namen in ein Feld einfügen."),
           # Tabelle zur Anzeige und Bearbeitung des Dienstplans
           DTOutput("dienstplan_table")
         ),
@@ -76,14 +77,48 @@ server <- function(input, output, session) {
 
 
   mitarbeiter_data <- reactive({
-    data <- data.frame(
-      Name = c(c("Müller", "Meier", "Schulze", "Schmitt", "Mustermann", "Young", "Frazey", "Eberhart", "Brauchler", "Farrar", "Korchuk", "Pippin", "Hahs", "Welsh", "Masar", "Alarcon", "Potter", "Mckim", "Hutchens", "Pokrant", "Hounshell", "Mckenney", "Rickman", "Knapp", "Cieloha")),
-      Vorname = c(c("Paul", "Martha", "Manuela", "Emanuella", "Heinz", "Riley", "Elizabeth", "Kimber", "Jacob", "Nicholas", "Beau", "Rachel", "Brian", "Brian", "Krystal", "Aria", "Brandon", "Jonathan", "Rebecca", "Ethan", "Cortnee", "Ann", "Mary", "Tyler", "Kara")),
-      Status = c(c("MA", "Praktikant", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA")),
-      stringsAsFactors = FALSE # Wichtig, um Strings als Strings zu behalten
+    # data <- data.frame(
+    #   Name = c(c("Müller", "Meier", "Schulze", "Schmitt", "Mustermann", "Young", "Frazey", "Eberhart", "Brauchler", "Farrar", "Korchuk", "Pippin", "Hahs", "Welsh", "Masar", "Alarcon", "Potter", "Mckim", "Hutchens", "Pokrant", "Hounshell", "Mckenney", "Rickman", "Knapp", "Cieloha")),
+    #   Vorname = c(c("Paul", "Martha", "Manuela", "Emanuella", "Heinz", "Riley", "Elizabeth", "Kimber", "Jacob", "Nicholas", "Beau", "Rachel", "Brian", "Brian", "Krystal", "Aria", "Brandon", "Jonathan", "Rebecca", "Ethan", "Cortnee", "Ann", "Mary", "Tyler", "Kara")),
+    #   Status = c(c("MA", "Praktikant", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA", "MA")),
+    #       stringsAsFactors = FALSE # Wichtig, um Strings als Strings zu behalten
+    # )
+
+    data <- tibble::tribble(
+      ~Name, ~Vorname, ~Status, ~abw.von, ~abw.bis,
+
+      # muster:
+      # "Müller", "Paul", "MA", "2025-01-01", "2025-01-21",
+      "Meier", "Martha", "Praktikant", "", "",
+      "Schulze", "Manuela", "MA", "2025-07-10", "2025-07-30",
+      "Schmitt", "Emanuella", "MA", "", "",
+      "Mustermann", "Heinz", "MA", "", "",
+      "Young", "Riley", "MA", "", "",
+      "Frazey", "Elizabeth", "MA", "", "",
+      "Eberhart", "Kimber", "MA", "", "",
+      "Brauchler", "Jacob", "MA", "", "",
+      "Farrar", "Nicholas", "MA", "", "",
+      "Korchuk", "Beau", "MA", "", "",
+      "Pippin", "Rachel", "MA", "", "",
+      "Hahs", "Brian", "MA", "", "",
+      "Welsh", "Brian", "MA", "", "",
+      "Masar", "Krystal", "MA", "", "",
+      "Alarcon", "Aria", "MA", "", "",
+      "Potter", "Brandon", "MA", "", "",
+      "Mckim", "Jonathan", "MA", "", "",
+      "Hutchens", "Rebecca", "MA", "", "",
+      "Pokrant", "Ethan", "MA", "", "",
+      "Hounshell", "Cortnee", "MA", "", "",
+      "Mckenney", "Ann", "MA", "", "",
+      "Rickman", "Mary", "MA", "", "",
+      "Knapp", "Tyler", "MA", "", "",
+      "Cieloha", "Kara", "MA", "", ""
     )
+
     # Sortieren der Daten nach der Spalte 'Name'
     data[order(data$Name), ]
+    # data$abw.von <- ymd(data$abw.von)
+    # data$abw.bis <- ymd(data$abw.bis)
   })
 
   # Rendern der Tabelle mit DT
@@ -127,11 +162,11 @@ server <- function(input, output, session) {
 
       # Erstellt den initialen Dienstplan-Datensatz
       initial_plan <- data.frame(
-        Station = c(stations, rep("", 5)), # 5 leere Zeilen für manuelle Eingaben
-        Name = rep("", length(stations) + 5),
-        `Zeit ab` = rep("", length(stations) + 5),
-        `Zeit bis` = rep("", length(stations) + 5),
-        Kommentar = rep("", length(stations) + 5),
+        Station = c(stations, rep("...", 3)), # 3 leere Zeilen für manuelle Eingaben
+        Name = rep("", length(stations) + 3),
+        `Zeit ab` = rep("", length(stations) + 3),
+        `Zeit bis` = rep("", length(stations) + 3),
+        Kommentar = rep("", length(stations) + 3),
         stringsAsFactors = FALSE,
         check.names = FALSE # Verhindert, dass R Spaltennamen ändert
       )
@@ -184,6 +219,22 @@ server <- function(input, output, session) {
         )
     }
 
+    if (any(mitarbeiter_data()$abw.von != "")) {
+      abw <- mitarbeiter_data() |>
+        filter(input$selected_date %within%
+          interval(ymd(abw.von), ymd(abw.bis))) |>
+        pull(Name)
+      dt_table <- dt_table %>%
+        formatStyle(
+          "Name",
+          target = "row",
+          backgroundColor = styleEqual(
+            abw,
+            rep("skyblue", length(abw))
+          )
+        )
+    }
+
     dt_table # Gibt die (ggf. gestylte) Tabelle zurück
   })
 
@@ -212,9 +263,9 @@ server <- function(input, output, session) {
     datatable(rv_dienstplan(),
       # Ermöglicht Zellbearbeitung, wobei spezifische Spalten und Zeilen deaktiviert werden
       editable = list(
-        target = "cell",
-        # Deaktiviert die Spalte "Station" (Index 0) für die ersten 'num_fixed_stations' Zeilen
-        disable = list(columns = 0, rows = 1:num_fixed_stations)
+        target = "cell" # ,
+        #   # Deaktiviert die Spalte "Station" (Index 0) für die ersten 'num_fixed_stations' Zeilen
+        #   disable = list(columns = 0, rows = 1:num_fixed_stations)
       ),
       options = list(
         dom = "t", # Zeigt nur Tabelle, versteckt Suche/Info/Paginierung
