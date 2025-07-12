@@ -9,7 +9,7 @@ library(dplyr) # Für die Datenmanipulation
 
 ui <- fluidPage(
   # Titel der Anwendung
-  titlePanel("Dienstplaner für medizinisches Personal"),
+  titlePanel("Dienstplaner ITS"),
 
   # Layout mit Seitenleiste
   sidebarLayout(
